@@ -1,8 +1,9 @@
 use_frameworks!
 
-platform :ios, '9.0'
+platform :ios, '13.0'
 
 target 'Artificien_Example' do
+  pod 'OpenMinedSwiftSyft', '~> 0.1.3-beta2'
   pod 'Artificien', :path => '../'
 
   target 'Artificien_Tests' do
