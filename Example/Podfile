@@ -6,9 +6,9 @@ target 'Artificien_Example' do
   pod 'OpenMinedSwiftSyft', '~> 0.1.3-beta2'
   pod 'Artificien', :path => '../'
 
-  target 'Artificien_Tests' do
-    inherit! :search_paths
-
-    
-  end
+#  target 'Artificien_Tests' do
+#    inherit! :search_paths
+#
+#
+#  end
 end
