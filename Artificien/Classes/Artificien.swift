@@ -1,10 +1,11 @@
 import Foundation
+import SwiftSyft
 
 public class Artificien {
-    var pointlessProperty: Any
+    var key: String
     
-    public init(pointlessParam: Any) {
-        self.pointlessProperty = pointlessParam
+    public init(key: String) {
+        self.key = key
     }
     
     public func temp() {
