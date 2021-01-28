@@ -14,7 +14,7 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let obj = Artificien(pointlessParam: "doesn't really matter")
+        let obj = Artificien(key: "doesn't really matter")
         obj.temp()
     }
 }

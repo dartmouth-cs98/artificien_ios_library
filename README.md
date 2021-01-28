@@ -22,7 +22,7 @@ pod 'Artificien'
 
 ## Author
 
-shreyas.v.agnihotri@gmail.com, shreyas.v.agnihotri@gmail.com
+Shreyas Agnihotri
 
 ## License
 
