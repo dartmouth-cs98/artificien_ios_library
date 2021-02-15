@@ -14,8 +14,16 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let artificien = Artificien(nodeAddress: "blah")
-        artificien.train(trainingData: ["hello": 400], validationData: ["val": 23.5])
+        let artificien = Artificien(chargeDetection: false, wifiDetection: false)
+        let trainDict: [String: Float] = [
+            "age": 15,
+            "bodyMassIndex": 20,
+            "sex": 1
+        ]
+        let valDict: [String: Float] = [
+            "stepCount": 5000
+        ]
+        artificien.train(trainingData: trainDict, validationData: valDict)
     }
 }
 
