@@ -23,7 +23,7 @@ class ViewController: UIViewController {
         let valDict: [String: Float] = [
             "stepCount": 5000
         ]
-        artificien.train(trainingData: trainDict, validationData: valDict)
+        artificien.train(trainingData: trainDict, validationData: valDict, )
     }
 }
 

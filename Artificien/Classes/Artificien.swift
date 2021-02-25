@@ -17,19 +17,35 @@ public class Artificien {
     
     // TODO: Show them in the web portal how they need to structure their data
     public func train(trainingData: [String: Float], validationData: [String: Float], backgroundTask: BGTask? = nil) {
-                
-        // TODO: pull this from a plist
-        let parameters: [String: Any] = ["dataset_id": "dataSetFive"]
+                        
+        guard let plistPath = Bundle.main.path(forResource: "Artificien", ofType: "plist") else {
 
-        Alamofire.request(masterNode + "/info", method: .post, parameters: parameters, encoding: JSONEncoding.default).validate().responseJSON() { response in
-            
+            // Set background task failed if plist not found
+            backgroundTask?.setTaskCompleted(success: false)
+            return
+        }
+        guard let plistDict = NSDictionary(contentsOfFile: plistPath) as? [String: String] else {
+
+            // Set background task failed if plist not in dictionary format
+            backgroundTask?.setTaskCompleted(success: false)
+            return
+        }
+        guard let datasetID: String = plistDict["dataset_id"] else {
+
+            // Set background task failed if dataset key not found
+            backgroundTask?.setTaskCompleted(success: false)
+            return
+        }
+
+        Alamofire.request(masterNode + "/info", method: .post, parameters: ["dataset_id": datasetID], encoding: JSONEncoding.default).validate().responseJSON() { response in
+
             switch response.result {
-            
+
             case .success(let json):
                 let responseDict = json as! [String : Any]
                 let models = responseDict["models"] as! [[String]]
                 let nodeURL = responseDict["nodeURL"] as! String
-                
+                        
                 // Create a client with a PyGrid server URL
                 guard let syftClient = SyftClient(url: URL(string: "http://" + nodeURL + ":5000/")!) else {
                     // TODO: Set up some way to alert us that this doesn't work
@@ -45,7 +61,7 @@ public class Artificien {
                 // Loop through models and train them
                 let group = DispatchGroup()
                 for model in models {
-                    
+
                     let modelName = model[0]
                     let modelVersion = model[1]
                     
@@ -57,6 +73,7 @@ public class Artificien {
                         // Jump to next model if creating a job fails
                         group.leave()
                         continue
+                        return
                     }
                     
                     // This function is called when SwiftSyft has downloaded the plans and model parameters from PyGrid
@@ -85,11 +102,14 @@ public class Artificien {
                             
                             // Execute the plan with the training data and validation data.
                             // TODO: return the loss somewhere
-                            let loss = plan.execute(trainingData: trainingTensor, validationData: validationTensor, clientConfig: clientConfig)
+                            let diff = plan.execute(trainingData: trainingTensor, validationData: validationTensor, clientConfig: clientConfig)
                             
                             // Generate diff data and report the final diffs as
                             let diffStateData = try plan.generateDiffData()
                             modelReport(diffStateData)
+                            
+                            group.leave()
+                            return
                             
                         } catch let error {
                             
@@ -106,6 +126,7 @@ public class Artificien {
                         
                         print(error.localizedDescription)
                         group.leave()
+                        return
                     })
                     
                     // This is the error handler for being rejected in a cycle. You can retry again
@@ -117,6 +138,7 @@ public class Artificien {
                             print(timeout)
                         }
                         group.leave()
+                        return
                     })
                     
                     // Start the job. You can set that the job should only execute if the device is being charge and there is a WiFi connection.
@@ -133,13 +155,13 @@ public class Artificien {
                 }
 
                 group.notify(queue: .main) {
-                    
+                    print("model tasks complete")
                     // Finish the background task
                     backgroundTask?.setTaskCompleted(success: true)
                 }
                 
             case .failure(let error):
-                
+
                 // Set background task failed if fetching models fails
                 print(error)
                 backgroundTask?.setTaskCompleted(success: false)

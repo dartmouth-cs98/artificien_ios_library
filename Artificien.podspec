@@ -7,7 +7,7 @@
 #
 
 Pod::Spec.new do |s|
-  s.name             = 'ArtificienLibrary'
+  s.name             = 'Artificien'
   s.version          = '0.1.0'
   s.summary          = 'A federated learning library used to connect to the Artificien platform.'
   s.swift_version    = '5.3'
@@ -42,7 +42,7 @@ This is a federated learning library used to connect to the Artificien platform.
   # s.dependency 'AFNetworking', '~> 2.3'
   s.static_framework = true
   s.platform = :ios, "13.0"
-  s.dependency 'OpenMinedSwiftSyft', '~> 0.1.3-beta2'
-  s.dependency 'Alamofire', '~> 4.7'
+  s.dependency 'OpenMinedSwiftSyft', '0.1.3-beta2'
+  s.dependency 'Alamofire', '4.7'
   
 end
