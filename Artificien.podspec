@@ -22,11 +22,11 @@ Pod::Spec.new do |s|
 This is a federated learning library used to connect to the Artificien platform. Use it to download and train the data science models that need access to your app's local data.
                        DESC
 
-  s.homepage         = 'https://github.com/shreyas.v.agnihotri@gmail.com/Artificien'
+  s.homepage         = 'https://github.com/dartmouth-cs98/artificien_ios_library'
   # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'shreyas.v.agnihotri@gmail.com' => 'shreyas.v.agnihotri@gmail.com' }
-  s.source           = { :git => 'https://github.com/shreyas.v.agnihotri@gmail.com/Artificien.git', :tag => s.version.to_s }
+  s.source           = { :git => 'https://github.com/dartmouth-cs98/artificien_ios_library.git', :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
   s.ios.deployment_target = '13.0'
@@ -42,6 +42,7 @@ This is a federated learning library used to connect to the Artificien platform.
   # s.dependency 'AFNetworking', '~> 2.3'
   s.static_framework = true
   s.platform = :ios, "13.0"
-  s.dependency 'OpenMinedSwiftSyft', '~> 0.1.3-beta2'
+  s.dependency 'OpenMinedSwiftSyft', '0.1.3-beta2'
+  s.dependency 'Alamofire', '4.7'
   
 end
