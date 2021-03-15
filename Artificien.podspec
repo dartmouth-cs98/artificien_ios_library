@@ -43,6 +43,6 @@ This is a federated learning library used to connect to the Artificien platform.
   s.static_framework = true
   s.platform = :ios, "13.0"
   s.dependency 'OpenMinedSwiftSyft', '0.1.3-beta2'
-  s.dependency 'Alamofire', '4.7'
+  s.dependency 'Alamofire', '5.2'
   
 end

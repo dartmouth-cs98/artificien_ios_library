@@ -46,7 +46,7 @@ public class Artificien {
         }
 
         // Pull all active models for this app from master node using Plist dataset_id and api_key
-        Alamofire.request(masterNode + "/info", method: .post, parameters: ["dataset_id": datasetID], encoding: JSONEncoding.default, headers: ["api_key": apiKey]).validate().responseJSON() { response in
+        AF.request(masterNode + "/info", method: .post, parameters: ["dataset_id": datasetID], encoding: JSONEncoding.default, headers: ["api_key": apiKey]).validate().responseJSON() { response in
 
             switch response.result {
 
@@ -134,7 +134,7 @@ public class Artificien {
                             let loss = plan.execute(trainingData: trainingTensor, validationData: validationTensor, clientConfig: clientConfig)
                             
                             // Report model loss to master node (accuracy currently not recorded)
-                            Alamofire.request(self.masterNode + "/model_loss", method: .post, parameters: ["acc": -1, "loss": loss, "model_id": modelName], encoding: JSONEncoding.default)
+                            AF.request(self.masterNode + "/model_loss", method: .post, parameters: ["acc": -1, "loss": loss, "model_id": modelName], encoding: JSONEncoding.default)
                             
                             // Generate diff data and report the final diffs
                             let diffStateData = try plan.generateDiffData()
