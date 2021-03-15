@@ -1,3 +1,11 @@
+//
+//  Artificien.swift
+//  Artificien
+//
+//  Created by Shreyas Agnihotri on 01/18/2021.
+//  Copyright (c) 2021 Shreyas Agnihotri. All rights reserved.
+//
+
 import Foundation
 import BackgroundTasks
 import SwiftSyft
@@ -5,50 +13,50 @@ import Alamofire
 
 public class Artificien {
     
-    let masterNode = "http://orche-PyGri-5APKUWIHYWZ2-fabeedcb5955fdaf.elb.us-east-1.amazonaws.com:5001"
+    let masterNode = "http://orche-pygri-1otammo0acarg-74b44bcdcc5f77f0.elb.us-east-1.amazonaws.com:5001"
     var chargeDetection: Bool
     var wifiDetection: Bool
     var client: SyftClient?
     
+    // Create class and set global configuration for charging and wifi
     public init(chargeDetection: Bool = true, wifiDetection: Bool = true) {
         self.chargeDetection = chargeDetection
         self.wifiDetection = wifiDetection
     }
-    
-    // TODO: Show them in the web portal how they need to structure their data
-    public func train(trainingData: [String: Float], validationData: [String: Float], backgroundTask: BGTask? = nil) {
-                        
+
+    // Pull and train all necessary models given application data
+    public func train(data: [String: Float], backgroundTask: BGTask? = nil) {
+        
+        // Set background task failed if plist not found
         guard let plistPath = Bundle.main.path(forResource: "Artificien", ofType: "plist") else {
-
-            // Set background task failed if plist not found
             backgroundTask?.setTaskCompleted(success: false)
             return
         }
+        
+        // Set background task failed if plist not in dictionary format
         guard let plistDict = NSDictionary(contentsOfFile: plistPath) as? [String: String] else {
-
-            // Set background task failed if plist not in dictionary format
             backgroundTask?.setTaskCompleted(success: false)
             return
         }
-        guard let datasetID: String = plistDict["dataset_id"] else {
-
-            // Set background task failed if dataset key not found
+        
+        // Set background task failed if keys not found
+        guard let datasetID: String = plistDict["dataset_id"], let apiKey: String = plistDict["api_key"] else {
             backgroundTask?.setTaskCompleted(success: false)
             return
         }
 
-        Alamofire.request(masterNode + "/info", method: .post, parameters: ["dataset_id": datasetID], encoding: JSONEncoding.default).validate().responseJSON() { response in
+        // Pull all active models for this app from master node using Plist dataset_id and api_key
+        Alamofire.request(masterNode + "/info", method: .post, parameters: ["dataset_id": datasetID], encoding: JSONEncoding.default, headers: ["api_key": apiKey]).validate().responseJSON() { response in
 
             switch response.result {
 
             case .success(let json):
                 let responseDict = json as! [String : Any]
-                let models = responseDict["models"] as! [[String]]
+                let models = responseDict["models"] as! [[Any]]
                 let nodeURL = responseDict["nodeURL"] as! String
                         
                 // Create a client with a PyGrid server URL
                 guard let syftClient = SyftClient(url: URL(string: "http://" + nodeURL + ":5000/")!) else {
-                    // TODO: Set up some way to alert us that this doesn't work
                     
                     // Set background task failed if creating a client fails
                     backgroundTask?.setTaskCompleted(success: false)
@@ -58,22 +66,24 @@ public class Artificien {
                 // Store the client as a property so it doesn't get deallocated during training.
                 self.client = syftClient
                                 
-                // Loop through models and train them
+                // Loop through models and train them in parallel
                 let group = DispatchGroup()
                 for model in models {
 
-                    let modelName = model[0]
-                    let modelVersion = model[1]
+                    let modelName = model[0] as! String
+                    let modelVersion = model[1] as! String
+                    let trainingVariables = model[2] as! [String]
+                    let validationVariables = model[3] as! [String]
                     
-                    var backgroundTaskCancelled = false
+                    var backgroundTaskCancelled = false // Track whether to short-circuit background task
+                    group.enter() // Enter parallel batch
                     
-                    group.enter()
-                    
+                    // Create SwiftSyft worker job for current model
                     guard let syftJob: SyftJob = self.client?.newJob(modelName: modelName, version: modelVersion) else {
+                        
                         // Jump to next model if creating a job fails
                         group.leave()
                         continue
-                        return
                     }
                     
                     // This function is called when SwiftSyft has downloaded the plans and model parameters from PyGrid
@@ -89,22 +99,44 @@ public class Artificien {
                             return
                         }
                         
-                        // Prepare data arrays (sort by key alphabetically and select value)
-                        // TODO: check that key names are what they should be
-                        let trainingArray = trainingData.sorted{ $0.key < $1.key }.map({ $0.1 })
-                        let validationArray = validationData.sorted{ $0.key < $1.key }.map({ $0.1 })
+                        // Prepare training data as tensor as requested by data analyst
+                        var trainingArray: [Float] = []
+                        for variable in trainingVariables {
+                            if let providedVariable = data[variable] {
+                                trainingArray.append(providedVariable)
+                            } else {
+                                // App developer did not provide requested variable; terminate training
+                                group.leave()
+                                return
+                            }
+                        }
+
+                        // Prepare validation data as tensor as requested by data analyst
+                        var validationArray: [Float] = []
+                        for variable in validationVariables {
+                            if let providedVariable = data[variable] {
+                                validationArray.append(providedVariable)
+                            } else {
+                                // App developer did not provide requested variable; terminate training
+                                group.leave()
+                                return
+                            }
+                        }
                         
                         do {
                             
+                            // Create tensors for trainina and validation data
                             // Since we don't have native tensor wrappers in Swift yet, we use `TrainingData` and `ValidationData` classes to store the data and shape.
                             let trainingTensor = try TrainingData(data: trainingArray, shape: [clientConfig.batchSize, trainingArray.count / clientConfig.batchSize])
                             let validationTensor = try ValidationData(data: validationArray, shape: [clientConfig.batchSize, validationArray.count / clientConfig.batchSize])
                             
                             // Execute the plan with the training data and validation data.
-                            // TODO: return the loss somewhere
-                            let diff = plan.execute(trainingData: trainingTensor, validationData: validationTensor, clientConfig: clientConfig)
+                            let loss = plan.execute(trainingData: trainingTensor, validationData: validationTensor, clientConfig: clientConfig)
                             
-                            // Generate diff data and report the final diffs as
+                            // Report model loss to master node (accuracy not gathered currently)
+                            Alamofire.request(self.masterNode + "/model_loss", method: .post, parameters: ["acc": -1, "loss": loss])
+                            
+                            // Generate diff data and report the final diffs
                             let diffStateData = try plan.generateDiffData()
                             modelReport(diffStateData)
                             
@@ -155,7 +187,7 @@ public class Artificien {
                 }
 
                 group.notify(queue: .main) {
-                    print("model tasks complete")
+                    print("Artificien model tasks complete")
                     // Finish the background task
                     backgroundTask?.setTaskCompleted(success: true)
                 }

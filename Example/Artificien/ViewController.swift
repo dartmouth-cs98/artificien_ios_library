@@ -15,16 +15,12 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         
         let artificien = Artificien(chargeDetection: false, wifiDetection: false)
-        let trainDict: [String: Float] = [
+        let appData: [String: Float] = [
             "age": 15,
             "bodyMassIndex": 20,
-            "sex": 1
-        ]
-        let valDict: [String: Float] = [
+            "sex": 1,
             "stepCount": 5000
         ]
-        artificien.train(trainingData: trainDict, validationData: valDict, )
+        artificien.train(data: appData)
     }
 }
-
-// Note: Sometimes the above code will fail, saying that you can't construct `MyPodName`. I've found that simply deleting and retyping the code will make it work. If you continue to have issues, leave a comment below!
