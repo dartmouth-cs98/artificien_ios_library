@@ -15,15 +15,15 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         
         let artificien = Artificien(chargeDetection: false, wifiDetection: false)
-        let trainDict: [String: Float] = [
-            "age": 15,
-            "bodyMassIndex": 20,
-            "sex": 1
+                
+        let appData: [String: ArtificienDataType] = [
+            "age": .Float(15.0),
+            "bodyMassIndex": .Float(29.6789),
+            "sex": .Float(1.0),
+            "stepCount": .Float(5000.0)
         ]
-        let valDict: [String: Float] = [
-            "stepCount": 5000
-        ]
-        artificien.train(trainingData: trainDict, validationData: valDict, )
+        
+        artificien.train(data: appData)
     }
 }
 
