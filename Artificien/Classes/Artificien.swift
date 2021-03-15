@@ -133,8 +133,8 @@ public class Artificien {
                             // Execute the plan with the training data and validation data.
                             let loss = plan.execute(trainingData: trainingTensor, validationData: validationTensor, clientConfig: clientConfig)
                             
-                            // Report model loss to master node (accuracy not gathered currently)
-                            Alamofire.request(self.masterNode + "/model_loss", method: .post, parameters: ["acc": -1, "loss": loss])
+                            // Report model loss to master node (accuracy currently not recorded)
+                            Alamofire.request(self.masterNode + "/model_loss", method: .post, parameters: ["acc": -1, "loss": loss, "model_id": modelName], encoding: JSONEncoding.default)
                             
                             // Generate diff data and report the final diffs
                             let diffStateData = try plan.generateDiffData()
