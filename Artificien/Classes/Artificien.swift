@@ -54,6 +54,7 @@ public class Artificien {
                 let responseDict = json as! [String : Any]
                 guard responseDict.count != 1 else {
                     // Terminate early if response from server is merely confirming connection (on first setup call)
+                    // or is no node is available
                     backgroundTask?.setTaskCompleted(success: false)
                     return
                 }
