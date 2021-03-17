@@ -23,6 +23,13 @@ public class Artificien {
         self.chargeDetection = chargeDetection
         self.wifiDetection = wifiDetection
     }
+    
+    public func reportLoss(loss: Float, modelName: String) {
+        
+        // Report model loss to master node (accuracy currently not recorded)
+        let lossResponse = AF.request(self.masterNode + "/model_loss", method: .post, parameters: ["acc": -1, "loss": loss, "model_id": modelName], encoding: JSONEncoding.default).validate().responseJSON
+        print(lossResponse)
+    }
 
     // Pull and train all necessary models given application data
     public func train(data: [String: Float], backgroundTask: BGTask? = nil) {
@@ -138,9 +145,17 @@ public class Artificien {
                             
                             // Execute the plan with the training data and validation data.
                             let loss = plan.execute(trainingData: trainingTensor, validationData: validationTensor, clientConfig: clientConfig)
-                            
+                            let absoluteLoss = abs(loss)
+
                             // Report model loss to master node (accuracy currently not recorded)
-                            AF.request(self.masterNode + "/model_loss", method: .post, parameters: ["acc": -1, "loss": loss, "model_id": modelName], encoding: JSONEncoding.default)
+                            AF.request(self.masterNode + "/model_loss", method: .post, parameters: ["acc": -1, "loss": absoluteLoss, "model_id": modelName], encoding: JSONEncoding.default).responseString { response in
+                                if let statusCode = response.response?.statusCode {
+                                    print("\(statusCode)")
+                                }
+                            }
+                            
+                            // Store training result in UserDefaults in case app wishes to use it
+                            UserDefaults.standard.set("\(absoluteLoss)", forKey: "trainingResult")
                             
                             // Generate diff data and report the final diffs
                             let diffStateData = try plan.generateDiffData()
